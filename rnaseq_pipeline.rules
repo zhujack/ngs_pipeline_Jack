@@ -80,8 +80,8 @@ rule RNASeq:
 ############
 rule tophat:
 	input:
-		R1=DATA_DIR + "/{sample}/{sample}_R1.fastq.gz",
-		R2=DATA_DIR + "/{sample}/{sample}_R2.fastq.gz",
+		R1=DATA_DIR + "/{sample}_R1.fastq.gz",
+		R2=DATA_DIR + "/{sample}_R2.fastq.gz",
 	output: 
 		"{base}/{sample}/tophat_{sample}/accepted_hits.bam", 
 		"{base}/{sample}/tophat_{sample}/accepted_hits.bam.bai"
@@ -218,8 +218,8 @@ rule exon_exp:
 ############
 rule fusioncatcher:
 	input:
-		R1=DATA_DIR + "/{sample}/{sample}_R1.fastq.gz",
-		R2=DATA_DIR + "/{sample}/{sample}_R2.fastq.gz",
+		R1=DATA_DIR + "/{sample}_R1.fastq.gz",
+		R2=DATA_DIR + "/{sample}_R2.fastq.gz",
 	output: 
 		"{base}/{sample}/fusion/fusion-catcher.txt"
 	version: config['fusioncatcher']
@@ -238,8 +238,8 @@ rule fusioncatcher:
 ############
 rule deFuse:
 	input:
-		R1=DATA_DIR + "/{sample}/{sample}_R1.fastq.gz",
-		R2=DATA_DIR + "/{sample}/{sample}_R2.fastq.gz",
+		R1=DATA_DIR + "/{sample}_R1.fastq.gz",
+		R2=DATA_DIR + "/{sample}_R2.fastq.gz",
 		config=config["defuse_config"],
 	output:
 		"{base}/{sample}/fusion/defuse.raw.txt",
@@ -285,8 +285,8 @@ rule deFuse:
 ############
 rule STAR:
 	input:
-		R1=DATA_DIR + "/{sample}/{sample}_R1.fastq.gz",
-		R2=DATA_DIR + "/{sample}/{sample}_R2.fastq.gz",
+		R1=DATA_DIR + "/{sample}_R1.fastq.gz",
+		R2=DATA_DIR + "/{sample}_R2.fastq.gz",
 		ref=config["reference"],
 	output:
 		temp("{base}/{sample}/{sample}.star.bam"),
@@ -346,7 +346,7 @@ rule STAR:
 	VALIDATION_STRINGENCY=SILENT\
 	INPUT={wildcards.sample}_pass2Aligned.out.sam\
 	OUTPUT={params.home}/{wildcards.base}/{wildcards.sample}/{wildcards.sample}.star.bam\
-	SORT_ORDER=coordinate RGLB={wildcards.sample} RGPU={wildcards.sample} RGPL=ILLUMINA RGSM={wildcards.sample} RGCN=khanlab
+	SORT_ORDER=coordinate RGLB={wildcards.sample} RGPU={wildcards.sample} RGPL=ILLUMINA RGSM={wildcards.sample} RGCN=Meltzerlab
 
 	echo "Finished Step 5"
 	module load samtools

@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH --job-name="KhanLab"
+#SBATCH --job-name="JackTest"
 #SBATCH --mail-type=FAIL
 #SBATCH --output=log/snakemake.%j.o
 #SBATCH --partition="unlimited"
@@ -12,38 +12,50 @@
 #
 #NOW=$(date +"%H%M%S_%m%d%Y")
 NOW=$(date +"%Y%m%d_%H")
-module use /data/khanlab/apps/Modules
-module load python/3.4.3
-export NGS_PIPELINE="/data/khanlab/projects/patidar/Snakemake"
-export WORK_DIR="/data/khanlab/projects/patidar/Snakemake"
-export DATA_DIR="/data/khanlab/projects/DATA"
+# module use /data/khanlab/apps/Modules
+module load python/3.4.3 R
+export NGS_PIPELINE="/data/Clinomics/Tools/ngs-pipeline"
+#export WORK_DIR="/data/Clinomics/Tools/ngs-pipeline/test1"
+export WORK_DIR=`pwd`
+export DATA_DIR="fastq"
+export DATA_DIR_fastq="/data/CCRBioinfo/fastq/"
 SNAKEFILE=$NGS_PIPELINE/ngs_pipeline.rules
 SAM_CONFIG=$WORK_DIR/samplesheet.json
 ACT_DIR="/Actionable/"
-if [ `cat $SAM_CONFIG |/usr/bin/json_verify -c` -ne "JSON is valid" ]; then
-	echo "$SAM_CONFIG is not a valid json file"
-	exit
-fi
 
 cd $WORK_DIR
+##generate samplesheet.json
+# if [ ! -f $SAM_CONFIG ];then
+#     $NGS_PIPELINE/scripts/do_samplesheet2json.R -s /data/CCRBioinfo/zhujack/projects/TargetOsteosarcomaRNA/samplesheet_test.txt
+# fi
+
+if [ `cat $SAM_CONFIG |/usr/bin/json_verify -c` -ne "JSON is valid" ]; then
+    echo "$SAM_CONFIG is not a valid json file"
+    exit
+fi
+
+## log folder is required
+if [ ! -d log ];then
+    mkdir log
+fi
 
 snakemake\
-	--directory $WORK_DIR \
-	--snakefile $SNAKEFILE \
-	--configfile $SAM_CONFIG \
-	--jobname '{params.rulename}.{jobid}' \
-	--nolock \
-	-k -p -T \
-	-j 3000 \
-	--stats ngs_pipeline_${NOW}.stats \
-	--cluster "sbatch --mail-type=FAIL -o log/{params.rulename}.%j.o {params.batch}"\
-	>& ngs_pipeline_${NOW}.log
+    --directory $WORK_DIR \
+    --snakefile $SNAKEFILE \
+    --configfile $SAM_CONFIG \
+    --jobname '{params.rulename}.{jobid}' \
+    --nolock \
+    -k -p -T \
+    -j 3000 \
+    --stats ngs_pipeline_${NOW}.stats \
+    --cluster "sbatch --mail-type=FAIL -o log/{params.rulename}.%j.o {params.batch}"\
+    >& ngs_pipeline_${NOW}.log
 
 # Summary 
 #  snakemake --directory $WORK_DIR --snakefile $SNAKEFILE --configfile $SAM_CONFIG --summary
 
 ## DRY Run with Print out the shell commands that will be executed
-#  snakemake --directory $WORK_DIR --snakefile $SNAKEFILE --configfile $SAM_CONFIG --dryrun -p -r
+#  snakemake --directory $WORK_DIR --snakefile $SNAKEFILE --configfile $SAM_CONFIG --npr
 
 #DAG 
 #  snakemake --directory $WORK_DIR --snakefile $SNAKEFILE --configfile $SAM_CONFIG --dag | dot -Tpng > dag.png
