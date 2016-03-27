@@ -184,7 +184,8 @@ for subject in SUBJECT_VCFS.keys():
         ALL_VCFs +=[vcf]
         vcf = vcf.replace('raw.vcf', 'raw.snpEff.vcf')
         ALL_VCFs +=[vcf]
-rule Khanlab_Pipeline:
+
+rule Final:
     input: 
         SUB_IGV.values(),
         COPY_NUMBER,
@@ -218,8 +219,6 @@ rule Khanlab_Pipeline:
 #    echo -e "Pipeline finished successfully.\\n\\n\\n\\nRegards,\\nKhanLab\\nOncogenomics Section\\nCCR NCI NIH" |mutt -s "Khanlab NGS Pipeline" `whoami`@mail.nih.gov
     #######################
     """
-
-print(config["sample_fastq1"])
 
 # ############
 # #    Merge fastq files to sample
@@ -350,6 +349,10 @@ rule Genotyping:
         dest      = config["genotypeDest"]
     shell: """
     #######################
+    if [ ! -f {params.dest} ];then
+        mkdir -p {params.dest}
+    fi
+    
     module load samtools/{version}
     samtools mpileup -u -C50 -f {input.ref} -l {input.interval} {input.bam} | bcftools view -gc - >{output.vcf} 
     perl {input.vcf2genotype} {output.vcf} >{output.gt} 
