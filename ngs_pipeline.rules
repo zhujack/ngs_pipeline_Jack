@@ -283,7 +283,7 @@ rule BWA:
         temp("{subject}/{sample}/{sample}.bwa.bam.bai")
     version: config["bwa"]
     params:
-        rulename  = "bwa",
+        rulename  = "BWA",
         platform  = config["platform"],
         samtools  = config["samtools"], 
         batch     = config["job_bwa"],
@@ -314,7 +314,7 @@ rule Novoalign:
     version: config["novocraft"]
     resources: novoalign=1
     params:
-        rulename  = "novoalign",
+        rulename  = "Novoalign",
         batch     = config["job_novoalign"],
         samtools  = config["samtools"],
         platform  = config["platform"]
@@ -344,7 +344,7 @@ rule Genotyping:
         loh="{base}/{sample}/qc/{sample}.{aligner}.loh"
     version: config["samtools_old"]
     params:
-        rulename  = "genotype",
+        rulename  = "Genotyping",
         batch     = config["job_genotype"],
         dest      = config["genotypeDest"]
     shell: """
@@ -412,7 +412,7 @@ rule BamQC:
         "{base}/{sample}/qc/BamQC/qualimapReport.html"
     version: config["qualimap"]
     params: 
-        rulename = "bamqc",
+        rulename = "BamQC",
         batch     = config["job_qualimap"],
         outdir     ="{base}/{sample}/qc/BamQC",
     shell: """
@@ -434,7 +434,7 @@ rule QC_Sum:
         "QC_AllSamples.txt"
     version: "v1.1"
     params:
-        rulename = "qc_sum",
+        rulename = "QC_Sum",
         batch    = config['job_default']
     shell: """
     #######################
@@ -471,7 +471,7 @@ rule copyNumber:
         "{base}/{sample}/copyNumber/{sample}.count.txt"
     version: config["samtools"]
     params:
-        rulename  = "CN",
+        rulename  = "copyNumber",
         batch     = config["job_copynumber"]
     shell: """
     #######################
@@ -505,7 +505,7 @@ rule CN_LRR:
         final="{subject}/{Tumor}/copyNumber/{Tumor}.CN.v1.annotated.txt",
         filtered="{subject}/{Tumor}/copyNumber/{Tumor}.CN.v1.filtered.txt"    
     params:
-        rulename = "LRR",
+        rulename = "CN_LRR",
         batch    = config["job_default"],
     shell: """
     #######################
@@ -554,7 +554,7 @@ rule CN_LRR1:
         final="{subject}/{Tumor}/copyNumber/{Tumor}.CN.v2.annotated.txt",
         filtered="{subject}/{Tumor}/copyNumber/{Tumor}.CN.v2.filtered.txt"
     params:
-        rulename = "LRR",
+        rulename = "CN_LRR1",
         batch    = config["job_default"],
     shell: """
     #######################
@@ -606,7 +606,7 @@ rule HotSpotCoverage:
     output: "{base}/{sample}/qc/{sample}.{aligner}.hotspot.depth"
     version: config["bedtools"]
     params:
-        rulename  = "HotSpotCov",
+        rulename  = "HotSpotCoverage",
         batch     = config["job_hotspot"],
         samtools  = config["samtools"]
     shell: """
@@ -628,7 +628,7 @@ rule Coverage:
         "{subject}/{sample}/qc/{sample}.bwa.coverage.txt"
     version: config["bedtools"]
     params:
-        rulename = "coverage",
+        rulename = "Coverage",
         batch    = config["job_bedtools"]
     shell: """
     #######################
@@ -646,7 +646,7 @@ rule CoveragePlot:
     output: "{subject}/qc/{subject}.coveragePlot.png",
     version: config["R"]
     params:
-        rulename = "covplot",
+        rulename = "CoveragePlot",
         batch    = config["job_covplot"]
     shell: """
     #######################
@@ -662,7 +662,7 @@ rule IGV_Session:
     output: "{subject}/igv/session_{subject}.xml"
     message: "Making IGV session xml file for {wildcards.subject}"
     params:
-        rulename = "igv_session",
+        rulename = "IGV_Session",
         work_dir =  WORK_DIR
     shell: """
     #######################
@@ -710,7 +710,7 @@ rule BoxPlot_Hotspot:
         "{subject}/qc/{subject}.hotspot_coverage.png",
     version: config["R"]
     params:
-        rulename = "Boxplot",
+        rulename = "BoxPlot_Hotspot",
         batch    = config["job_covplot"]
     shell: """
     #######################
@@ -733,7 +733,7 @@ rule Picard_MarkDup:
         metrics="{subject}/{sample}/qc/{base}.markdup.txt"
     version: config["picard"]
     params:
-        rulename  = "mark_dup",
+        rulename  = "Picard_MarkDup",
         batch     = config["job_markdup"],
         samtools  = config["samtools"]    
     shell: """
@@ -756,7 +756,7 @@ rule copyNovoBam:
         bam="{base}/{sample}/{sample}.novo.final.bam",
         bai="{base}/{sample}/{sample}.novo.final.bam.bai",
     params:
-        rulename = "copy",
+        rulename = "copyNovoBam",
         batch    = config['job_default']
     shell: """
     #######################
@@ -780,7 +780,7 @@ rule GATK:
         index="{base}/{sample}/{sample}.bwa.final.bam.bai",
     version: config["GATK"]
     params:
-        rulename  = "gatk",
+        rulename  = "GATK",
         batch     = config["job_gatk"]
     shell: """
     #######################
@@ -806,7 +806,7 @@ rule Bam2MPG:
         snps="{subject}/{sample}/calls/{sample}.bam2mpg.vcf.gz",
     version: config["bam2mpg"]
     params:
-        rulename  = "bam2mpg",
+        rulename  = "Bam2MPG",
         batch     = config["job_bam2mpg"],
         samtools  = config["samtools"],
         vcftools  = config["vcftools"]
@@ -860,7 +860,7 @@ rule Sub_MPG:
         vcf="{subject}/{subject}/calls/{subject}.bam2mpg.raw.vcf"
     version: config["vcftools"]
     params:
-        rulename = "mergevcf",
+        rulename = "Sub_MPG",
         batch    = config["job_default"],
         vcforder = NGS_PIPELINE + "/scripts/vcfOrderCol.R"
     shell: """
@@ -962,7 +962,7 @@ rule Sub_HapCall:
         vcf="{subject}/{subject}/calls/{subject}.hapcaller.raw.vcf"
     version: config["GATK"]
     params:
-        rulename = "HC",
+        rulename = "Sub_HapCall",
         batch    = config["job_gatk"]
     run:
         bamFiles = " ".join('-I ' + bam for bam in input.bams)
@@ -988,7 +988,7 @@ rule Sub_Platypus:
     version: config["platypus"]
     log: "log/platypus.{subject}"
     params:
-        rulename = "PLAT",
+        rulename = "Sub_Platypus",
         batch    = config["job_platypus"]
     shell: """
     #######################
@@ -1011,7 +1011,7 @@ rule  FreeBayes:
         vcf="{subject}/{sample}/calls/{sample}.freebayes.vcf"
     version: config["freebayes"]
     params:
-        rulename = "freebayes",
+        rulename = "FreeBayes",
         batch    = config["job_freebayes"],
         vcftools = config["vcftools"]
     shell: """
@@ -1056,7 +1056,7 @@ rule vcf2txt:
     output:
         txt="{subject}/calls/{base}.snpEff.txt"
     params:
-        rulename      ="snpEff",
+        rulename      ="vcf2txt",
         batch         =config["job_default"],
         annovar       =config["annovar"]
     shell: """
@@ -1181,7 +1181,7 @@ rule CombineAnnotation:
     output: "{subject}/annotation/{subject}.Annotations.coding.rare.txt"
     version: "1.0"
     params:
-        rulename   = "combine",
+        rulename   = "CombineAnnotation",
         batch       = config["job_Combine"],
         dataDir    = config["annovar_data"]
     shell: """
@@ -1221,7 +1221,7 @@ rule AttachAnnotation:
         txt="{subject}/{base1}/calls/{base}.annotated.txt"
     version: "1.0"
     params:
-        rulename   = "add",
+        rulename   = "AttachAnnotation",
         batch      = config["job_addbackann"],
     shell: """
     #######################
@@ -1256,7 +1256,7 @@ rule DBinput:
         convertor=NGS_PIPELINE + "/scripts/makeDBVariantFile.pl"
     output: "{subject}/{subject}/db/{subject}.{group}"
     params:
-        rulename  = "makeDBinput"
+        rulename  = "DBinput"
     shell: """
     #######################
     perl {input.convertor} {input.txtFiles} >{output}
@@ -1276,7 +1276,7 @@ rule Actionable_Somatic:
     output:
         somatic="{subject}/{ACT_DIR}/{subject}.somatic.actionable.txt",
     params:
-        rulename  = "ActionableMutations",
+        rulename  = "Actionable_Somatic",
         batch    = config['job_default']
     shell: """
     #######################
@@ -1302,7 +1302,7 @@ rule Actionable_Germline:
     output:
         germline="{subject}/{ACT_DIR}/{subject}.germline.actionable.txt",
     params:
-        rulename  = "ActionableMutations",
+        rulename  = "Actionable_Germline",
         batch    = config['job_default']
     shell: """
     #######################
@@ -1333,7 +1333,7 @@ rule Actionable_RNAseq:
     output:
         rnaseq="{subject}/{ACT_DIR}/{subject}.rnaseq.actionable.txt",
     params:
-        rulename  = "ActionableMutations",
+        rulename  = "Actionable_RNAseq",
         batch    = config['job_default']
     shell: """
     #######################

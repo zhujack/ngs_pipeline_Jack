@@ -109,7 +109,7 @@ rule symlink_tophatBam:
         bam="{base}/{sample}/{sample}.tophat.final.bam",
         bai="{base}/{sample}/{sample}.tophat.final.bam.bai"
     params:
-        rulename  = "tophat_link",
+        rulename  = "symlink_tophatBam",
     shell: """
     #######################
     cd {wildcards.base}/{wildcards.sample}/
@@ -129,7 +129,7 @@ rule tophat_fusion:
         "{base}/{sample}/fusion/tophat-fusion.txt"
     version: config["tophat"]
     params:
-        rulename = "tp",
+        rulename = "tophat_fusion",
         batch    =config['job_tophatPost'],
         ref      =config['BowtieIndex'],
         bowtie   =config['bowtie'],
@@ -140,10 +140,14 @@ rule tophat_fusion:
     module load bowtie/{params.bowtie}
     module load blast
     cd {wildcards.base}/{wildcards.sample}/
-    rm -f blast ensGene.txt ensGtp.txt mcl refGene.txt
+    if [ -f ensGene.txt ];then
+        rm -f blast ensGene.txt ensGtp.txt mcl refGene.txt
+    fi
     ln -s {params.tp_ref}/* .
     tophat-fusion-post -p ${{SLURM_CPUS_ON_NODE}} --num-fusion-pairs 1 {params.ref}
-    rm blast ensGene.txt ensGtp.txt mcl refGene.txt
+    if [ -f ensGene.txt ];then
+        rm blast ensGene.txt ensGtp.txt mcl refGene.txt
+    fi
     sed -i  '1s/^/Sample\\tGene_left\\tChr_left\\tCoordinate_left\\tGene_right\\tChr_right\\tCoordinate_right\\t#SpanningReads\\t#SpanningMatePairs\\t#SpanningMateEndOfPair\\tScore\\n/' tophatfusion_out/result.txt
     ln -s ../tophatfusion_out/result.html fusion/tophat-fusion.html
     ln -s ../tophatfusion_out/result.txt  fusion/tophat-fusion.txt
@@ -163,7 +167,7 @@ rule cufflinks:
         "{base}/{sample}/cufflinks_{gtf}/isoforms.fpkm_tracking_log2"
     version: config['cufflinks']
     params:
-        rulename   = "cuff",
+        rulename   = "cufflinks",
         batch      =config['job_cufflinks']
     shell: """
     #######################
@@ -188,7 +192,7 @@ rule exon_exp:
         ens="{base}/{sample}/exonExp_ENS/{sample}.exonExpression.ENS.txt"
     version: config['samtools']
     params:
-        rulename   = "exonExp",
+        rulename   = "exon_exp",
         batch      =config['job_exonExp']
     shell: """
     #######################
@@ -224,7 +228,7 @@ rule fusioncatcher:
         "{base}/{sample}/fusion/fusion-catcher.txt"
     version: config['fusioncatcher']
     params:
-        rulename = "fc",
+        rulename = "fusioncatcher",
         batch    = config['job_fusioncatch']
     shell: """
     #######################
@@ -370,7 +374,7 @@ rule GATK_RNASeq:
         index="{base}/{sample}/{sample}.star.final.bam.bai",
     version: config["GATK"]
     params:
-        rulename  = "gatk",
+        rulename  = "GATK_RNASeq",
         batch     = config["job_gatk"]
     shell: """
     #######################
@@ -398,7 +402,7 @@ rule HapCall_RNASeq:
         vcf="{base}/{sample}/calls/{sample}.hapcaller.raw.vcf"
     version: config["GATK"]
     params:
-        rulename = "HC",
+        rulename = "HapCall_RNASeq",
         batch    = config["job_gatk"]
     shell: """
     #######################
@@ -443,7 +447,7 @@ rule sub_fusion:
     output:
         "{subject}/{sample}/fusion/{sample}.actionable.fusion.txt"
     params:
-        rulename = "Actionable_F",
+        rulename = "sub_fusion",
         batch    = config["job_default"]
     shell: """
     #######################
@@ -465,7 +469,7 @@ rule Actionable_fusion:
     output:
         "{subject}/{ACT_DIR}/{subject}.fusion.actionable.txt"
     params:
-        rulename = "Actionable_F",
+        rulename = "Actionable_fusion",
         batch    = config["job_default"]
     shell: """
     #######################
