@@ -187,27 +187,29 @@ for subject in SUBJECT_VCFS.keys():
 
 rule Final:
     input: 
-        SUB_IGV.values(),
-        COPY_NUMBER,
-        ALL_VCFs,
-        expand("{subject}/annotation/{subject}.Annotations.coding.rare.txt", subject=SUBS),
-        expand("{subject}/qc/{subject}.coveragePlot.png", subject=SUBS),
-        expand("{subject}/qc/{subject}.circos.png", subject=SUBS),
-        expand("{subject}/qc/{subject}.genotyping.txt", subject=SUBS),
-        expand("{subject}/qc/{subject}.hotspot_coverage.png", subject=SUBS),
-        expand("{subject}/igv/session_{subject}.xml", subject=SUBS),
-        "rnaseqDone",
-        "QC_AllSamples.txt",
-        ALL_QC,
-        ALL_BAMS,
-        varFiles,
-        DBFiles,
-        ActionableFiles
+        ALL_FASTQC
+        # SUB_IGV.values(),
+        # COPY_NUMBER,
+        # ALL_VCFs,
+        # expand("{subject}/annotation/{subject}.Annotations.coding.rare.txt", subject=SUBS),
+        # expand("{subject}/qc/{subject}.coveragePlot.png", subject=SUBS),
+        # expand("{subject}/qc/{subject}.circos.png", subject=SUBS),
+        # expand("{subject}/qc/{subject}.genotyping.txt", subject=SUBS),
+        # expand("{subject}/qc/{subject}.hotspot_coverage.png", subject=SUBS),
+        # expand("{subject}/igv/session_{subject}.xml", subject=SUBS),
+        # "rnaseqDone",
+        # "QC_AllSamples.txt",
+        # ALL_QC,
+        # ALL_BAMS,
+        # varFiles,
+        # DBFiles,
+        # ActionableFiles
     version: "1.0"
     params: 
         rulename = "Final",
         group    = config["group"],
-        wait4job = NGS_PIPELINE + "/scripts/block_for_jobid.pl"
+        wait4job = NGS_PIPELINE + "/scripts/block_for_jobid.pl",
+        batch     = config["job_default"]
     shell: """
     #######################
 #    find log/ -type f -empty -delete
@@ -220,32 +222,32 @@ rule Final:
     #######################
     """
 
-# ############
-# #    Merge fastq files to sample
-# ############
-# rule fastqMerge:
-#     input:
-#         R1=lambda wildcards: [DATA_DIR_fastq + "/"+fq1 for fq1 in config["sample_fastq1"][wildcards.sample] ],
-#         R2=lambda wildcards: [DATA_DIR_fastq + "/"+fq2 for fq2 in config["sample_fastq2"][wildcards.sample] ]
-#     output:
-#         R1=DATA_DIR + "/{sample}_R1.fastq.gz",
-#         R2=DATA_DIR + "/{sample}_R2.fastq.gz"
-#     params:
-#         rulename  = "fastqMerge",
-#         batch     = config["job_default"]
-#     run:
-#         if isinstance(input.R1, list) and len(input.R1) == 1:
-#             shell("""
-#                 ln -sf  {input.R1} {output.R1};
-#                 ln -sf  {input.R2} {output.R2}
-#             """)
-#         else:
-#             shell("""
-#                 #######################
-#                 cat {input.R1} > {output.R1}
-#                 cat {input.R2} > {output.R2}
-#                 #######################
-#             """)
+############
+#    Merge fastq files to sample
+############
+rule fastqMerge:
+    input:
+        R1=lambda wildcards: [DATA_DIR_fastq + "/"+fq1 for fq1 in config["sample_fastq1"][wildcards.sample] ],
+        R2=lambda wildcards: [DATA_DIR_fastq + "/"+fq2 for fq2 in config["sample_fastq2"][wildcards.sample] ]
+    output:
+        R1=DATA_DIR + "/{sample}_R1.fastq.gz",
+        R2=DATA_DIR + "/{sample}_R2.fastq.gz"
+    params:
+        rulename  = "fastqMerge",
+        batch     = config["job_default"]
+    run:
+        if isinstance(input.R1, list) and len(input.R1) == 1:
+            shell("""
+                ln -sf  {input.R1} {output.R1};
+                ln -sf  {input.R2} {output.R2}
+            """)
+        else:
+            shell("""
+                #######################
+                cat {input.R1} > {output.R1}
+                cat {input.R2} > {output.R2}
+                #######################
+            """)
 
 
 

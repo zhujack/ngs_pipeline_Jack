@@ -18,7 +18,7 @@ export NGS_PIPELINE="/data/Clinomics/Tools/ngs-pipeline"
 #export WORK_DIR="/data/Clinomics/Tools/ngs-pipeline/test1"
 export WORK_DIR=`pwd`
 export DATA_DIR="fastq"
-export DATA_DIR_fastq="/data/CCRBioinfo/fastq/"
+export DATA_DIR_fastq="/data/CCRBioinfo/fastq"
 SNAKEFILE=$NGS_PIPELINE/ngs_pipeline.rules
 SAM_CONFIG=$WORK_DIR/samplesheet.json
 ACT_DIR="/Actionable/"
@@ -48,7 +48,7 @@ snakemake\
     -k -p -T \
     -j 3000 \
     --stats ngs_pipeline_${NOW}.stats \
-    --cluster "sbatch --mail-type=FAIL -o log/{params.rulename}.%j.o {params.batch}"\
+    --cluster "sbatch --mail-type=FAIL -o log/{params.rulename}.%j.o -e log/{params.rulename}.%j.e {params.batch}"\
     >& ngs_pipeline_${NOW}.log
 
 # Summary 

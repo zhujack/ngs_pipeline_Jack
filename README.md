@@ -17,13 +17,21 @@ git clone https://github.com/patidarr/ngs_pipeline.git
 - QC
 - BWA, Novoalign
 - Broad Standard Practices on bwa bam
-- Haplotype Caller, Platupys, Bam2MPG, MuTect, Strelka
+- Haplotype Caller, Platypus, Bam2MPG, MuTect, Strelka
 - snpEff, Annovar, SIFT, pph2, Custom Annotation
 - Coverage Plot, Circos Plot, Hotspot Coverage Box Plot
 - Create input format for oncogenomics database (Patient Level)
 - Make Actionable Classification for Germline and Somatic Mutations 
 - Copy number based on the simple T/N LogRatio (N cov >=30), Corrected for Total # Reads
 - LRR adjusted to center. 
+- Patient/subject level data:
+    BWA -> Haplotype Caller, Platypus, Hotspot BoxPlot, Coverage Plot, Sample Matching, Circos Plot, Annotations.coding.rare.txt, IGV session,  
+    Novoalign -> MPG
+
+- Sample level data:
+    fastqc, flagstat, hotspot coverage, Coverage, bamQC, Reads Counts, Somatic Copy Number, 
+
+
 
 ### RNASeq:
 - QC
