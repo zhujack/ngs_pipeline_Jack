@@ -17,7 +17,7 @@ module load python/3.4.3 R
 export NGS_PIPELINE="/data/Clinomics/Tools/ngs-pipeline"
 #export WORK_DIR="/data/Clinomics/Tools/ngs-pipeline/test1"
 export WORK_DIR=`pwd`
-export DATA_DIR="fastq"
+export DATA_DIR="${WORK_DIR}/fastq"
 export DATA_DIR_fastq="/data/CCRBioinfo/fastq"
 SNAKEFILE=$NGS_PIPELINE/ngs_pipeline.rules
 SAM_CONFIG=$WORK_DIR/samplesheet.json

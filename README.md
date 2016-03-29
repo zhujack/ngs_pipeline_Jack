@@ -27,11 +27,8 @@ git clone https://github.com/patidarr/ngs_pipeline.git
 - Patient/subject level data:
     BWA -> Haplotype Caller, Platypus, Hotspot BoxPlot, Coverage Plot, Sample Matching, Circos Plot, Annotations.coding.rare.txt, IGV session,  
     Novoalign -> MPG
-
 - Sample level data:
     fastqc, flagstat, hotspot coverage, Coverage, bamQC, Reads Counts, Somatic Copy Number, 
-
-
 
 ### RNASeq:
 - QC
@@ -43,6 +40,11 @@ git clone https://github.com/patidarr/ngs_pipeline.git
 - Haplotype Caller
 - snpEff, Annovar, SIFT, pph2, Custom Annotation
 - Actionable Fusion classification
+- General workflows:
+    STAR -> Haplotype Caller
+    tophat -> cufflinks, exon_exp and tophat_fusion
+    fusioncatcher
+    deFuse
 
 ### Patient:
 - Genotyping On Patient. 

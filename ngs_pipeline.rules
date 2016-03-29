@@ -69,6 +69,11 @@ for subject  in config['RNASeq'].keys():
         if subject not in PATIENTS:
                 PATIENTS.append(subject)    
 ###########################################################################
+ALL_FASTQ1  = expand(DATA_DIR + "/{sample}_R1.fastq.gz", sample=config["sample_fastq1"].keys())
+ALL_FASTQ2  = expand(DATA_DIR + "/{sample}_R2.fastq.gz", sample=config["sample_fastq2"].keys())
+ALL_FASTQ = ALL_FASTQ1 + ALL_FASTQ2
+print(ALL_FASTQ)
+
 ALL_FASTQC  = ["{subject}/{sample}/qc/fastqc/{sample}_R2_fastqc.html".format(subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES]
 ALL_BAMS    = ["{subject}/{sample}/{sample}.bwa.final.bam".format(subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES]
 ALL_BAMS   += ["{subject}/{sample}/{sample}.novo.final.bam".format(subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES]
@@ -187,23 +192,23 @@ for subject in SUBJECT_VCFS.keys():
 
 rule Final:
     input: 
-        ALL_FASTQC
-        # SUB_IGV.values(),
-        # COPY_NUMBER,
-        # ALL_VCFs,
-        # expand("{subject}/annotation/{subject}.Annotations.coding.rare.txt", subject=SUBS),
-        # expand("{subject}/qc/{subject}.coveragePlot.png", subject=SUBS),
-        # expand("{subject}/qc/{subject}.circos.png", subject=SUBS),
-        # expand("{subject}/qc/{subject}.genotyping.txt", subject=SUBS),
-        # expand("{subject}/qc/{subject}.hotspot_coverage.png", subject=SUBS),
-        # expand("{subject}/igv/session_{subject}.xml", subject=SUBS),
-        # "rnaseqDone",
-        # "QC_AllSamples.txt",
-        # ALL_QC,
-        # ALL_BAMS,
-        # varFiles,
-        # DBFiles,
-        # ActionableFiles
+        ALL_FASTQ
+        ,SUB_IGV.values(),
+        COPY_NUMBER,
+        ALL_VCFs,
+        expand("{subject}/annotation/{subject}.Annotations.coding.rare.txt", subject=SUBS),
+        expand("{subject}/qc/{subject}.coveragePlot.png", subject=SUBS),
+        expand("{subject}/qc/{subject}.circos.png", subject=SUBS),
+        expand("{subject}/qc/{subject}.genotyping.txt", subject=SUBS),
+        expand("{subject}/qc/{subject}.hotspot_coverage.png", subject=SUBS),
+        expand("{subject}/igv/session_{subject}.xml", subject=SUBS),
+        "rnaseqDone",
+        "QC_AllSamples.txt",
+        ALL_QC, ALL_FASTQC,
+        ALL_BAMS,
+        varFiles,
+        DBFiles,
+        ActionableFiles
     version: "1.0"
     params: 
         rulename = "Final",
@@ -222,32 +227,32 @@ rule Final:
     #######################
     """
 
-############
-#    Merge fastq files to sample
-############
-rule fastqMerge:
-    input:
-        R1=lambda wildcards: [DATA_DIR_fastq + "/"+fq1 for fq1 in config["sample_fastq1"][wildcards.sample] ],
-        R2=lambda wildcards: [DATA_DIR_fastq + "/"+fq2 for fq2 in config["sample_fastq2"][wildcards.sample] ]
-    output:
-        R1=DATA_DIR + "/{sample}_R1.fastq.gz",
-        R2=DATA_DIR + "/{sample}_R2.fastq.gz"
-    params:
-        rulename  = "fastqMerge",
-        batch     = config["job_default"]
-    run:
-        if isinstance(input.R1, list) and len(input.R1) == 1:
-            shell("""
-                ln -sf  {input.R1} {output.R1};
-                ln -sf  {input.R2} {output.R2}
-            """)
-        else:
-            shell("""
-                #######################
-                cat {input.R1} > {output.R1}
-                cat {input.R2} > {output.R2}
-                #######################
-            """)
+# ############
+# #    Merge fastq files to sample
+# ############
+# rule fastqMerge:
+#     input:
+#         R1=lambda wildcards: [DATA_DIR_fastq + "/"+fq1 for fq1 in config["sample_fastq1"][wildcards.sample] ],
+#         R2=lambda wildcards: [DATA_DIR_fastq + "/"+fq2 for fq2 in config["sample_fastq2"][wildcards.sample] ]
+#     output:
+#         R1=DATA_DIR + "/{sample}_R1.fastq.gz",
+#         R2=DATA_DIR + "/{sample}_R2.fastq.gz"
+#     params:
+#         rulename  = "fastqMerge",
+#         batch     = config["job_default"]
+#     run:
+#         if isinstance(input.R1, list) and len(input.R1) == 1:
+#             shell("""
+#                 ln -sf  {input.R1} {output.R1};
+#                 ln -sf  {input.R2} {output.R2}
+#             """)
+#         else:
+#             shell("""
+#                 #######################
+#                 cat {input.R1} > {output.R1}
+#                 cat {input.R2} > {output.R2}
+#                 #######################
+#             """)
 
 
 
@@ -420,8 +425,9 @@ rule BamQC:
     shell: """
     #######################
     MEM=`echo "{params.batch}" |perl -n -e'/--mem=(\d+)/ && print \$1'`
-    module load qualimap/{version}
-    qualimap bamqc -c -bam {input.bam} -outdir {params.outdir} -gff {input.interval} -nt ${{SLURM_CPUS_ON_NODE}} --java-mem-size=${{MEM}}G 
+    # module load qualimap/{version}
+    ## needs qualimap/2.2-dev, but not on the biowulf
+    /data/CCRBioinfo/zhujack/source/qualimap_v2.2/qualimap bamqc -c -bam {input.bam} -outdir {params.outdir} -gff {input.interval} -nt ${{SLURM_CPUS_ON_NODE}} --java-mem-size=${{MEM}}G 
     #######################
     """
 ############
@@ -496,8 +502,7 @@ rule CN_LRR:
     input:
         files=lambda wildcards: somaticCopy[wildcards.Tumor],
         ref=config["gene_coord"],
-        #index=config["reference"].replace('.fasta', '.index.txt'),
-        index=config["reference"],
+        index=config["reference"].replace('.fasta', '.index.txt'),
         tool=NGS_PIPELINE+ "/scripts/AddGene.pl",
         cgc    = config["annovar_data"]+"geneLists/combinedList_030816",
         filter=NGS_PIPELINE+ "/scripts/filterCNV.pl"
@@ -959,7 +964,7 @@ rule Sub_HapCall:
         bams=lambda wildcards: SUB_BAMS[wildcards.subject],
         ref=config["reference"],
         dbsnp=config["dbsnp"],
-        interval= lambda wildcards: config['sample_captures'][wildcards.subject][0]
+        interval= lambda wildcards: config['subject_captures'][wildcards.subject][0]
     output:
         vcf="{subject}/{subject}/calls/{subject}.hapcaller.raw.vcf"
     version: config["GATK"]
@@ -984,7 +989,7 @@ rule Sub_Platypus:
         bams=lambda wildcards: SUB_BAMS[wildcards.subject],
         ref=config["reference"],
         dbsnp=config["dbsnp"],
-        interval= lambda wildcards: config['sample_captures'][wildcards.subject][0]##changed from sample_captures
+        interval= lambda wildcards: config['subject_captures'][wildcards.subject][0]##changed from sample_captures
     output:
         vcf="{subject}/{subject}/calls/{subject}.platypus.raw.vcf"
     version: config["platypus"]
