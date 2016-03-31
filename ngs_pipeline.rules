@@ -69,18 +69,16 @@ for subject  in config['RNASeq'].keys():
         if subject not in PATIENTS:
                 PATIENTS.append(subject)    
 ###########################################################################
-ALL_FASTQ1  = expand(DATA_DIR + "/{sample}_R1.fastq.gz", sample=config["sample_fastq1"].keys())
-ALL_FASTQ2  = expand(DATA_DIR + "/{sample}_R2.fastq.gz", sample=config["sample_fastq2"].keys())
-ALL_FASTQ = ALL_FASTQ1 + ALL_FASTQ2
-print(ALL_FASTQ)
-
+# ALL_FASTQ1  = expand(DATA_DIR + "/{sample}_R1.fastq.gz", sample=config["sample_fastq1"].keys())
+# ALL_FASTQ2  = expand(DATA_DIR + "/{sample}_R2.fastq.gz", sample=config["sample_fastq2"].keys())
+# ALL_FASTQ = ALL_FASTQ1 + ALL_FASTQ2
 ALL_FASTQC  = ["{subject}/{sample}/qc/fastqc/{sample}_R2_fastqc.html".format(subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES]
 ALL_BAMS    = ["{subject}/{sample}/{sample}.bwa.final.bam".format(subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES]
 ALL_BAMS   += ["{subject}/{sample}/{sample}.novo.final.bam".format(subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES]
 ALL_QC      = ["{subject}/{sample}/qc/{sample}.bwa.flagstat.txt".format(subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES] 
 ALL_QC     += ["{subject}/{sample}/qc/{sample}.bwa.hotspot.depth".format(subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES] 
 ALL_QC     += ["{subject}/{sample}/qc/{sample}.bwa.gt".format(subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES] 
-ALL_QC     += ["{subject}/{sample}/qc/BamQC/qualimapReport.html".format(subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES]
+# ALL_QC     += ["{subject}/{sample}/qc/BamQC/qualimapReport.html".format(subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES]
 ALL_QC     += ["{subject}/{sample}/copyNumber/{sample}.count.txt".format(subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES]
 ALL_QC     += expand("{subject}/qc/{subject}.genotyping.txt", subject=PATIENTS)
 ALL_QC     += expand("{subject}/qc/{subject}.coveragePlot.png", subject=PATIENTS)
@@ -192,8 +190,8 @@ for subject in SUBJECT_VCFS.keys():
 
 rule Final:
     input: 
-        ALL_FASTQ
-        ,SUB_IGV.values(),
+        # ALL_FASTQ,
+        SUB_IGV.values(),
         COPY_NUMBER,
         ALL_VCFs,
         expand("{subject}/annotation/{subject}.Annotations.coding.rare.txt", subject=SUBS),
@@ -527,8 +525,8 @@ rule CN_LRR:
     perl {input.tool} {output.out}.temp {output.out}.temp1 >>{output.out}
 
     awk '{{if($4>=30) print $0}}' {output.out} >{output.hq}
-    median=`cut -f7 {output.hq}|grep -v LRR | {params.tool} --stat median --file - `
-    MAD=`cut -f7 {output.hq}|grep -v LRR | {params.tool} --stat MAD --file - `
+    median=`cut -f7 {output.hq}|grep -v LRR | {params.tool} --stat median --file - | grep -v WARNING`
+    MAD=`cut -f7 {output.hq}|grep -v LRR | {params.tool} --stat MAD --file - | grep -v WARNING`
     min=`echo "${{median}}-(2*${{MAD}})"|bc`
     max=`echo "${{median}}+(2*${{MAD}})"|bc`
 
@@ -578,7 +576,7 @@ rule CN_LRR1:
     # Created the first file
 
     awk '{{if($4>=30) print $0}}' {output.out} >{output.hq}
-    median=`cut -f7 {output.hq}|grep -v LRR | {params.tool} --stat median --file - `
+    median=`cut -f7 {output.hq}|grep -v LRR | {params.tool} --stat median --file - | grep -v WARNING`
     
     corr_factor=`echo "0 - ${{median}}"|bc`
     echo -e "#Chr\\tStart\\tEnd\\tNormalCoverage\\tTumorCoverage\\tRatio\\tLRR\\tGene(s)\\tStrand(s)" >{output.out}.corrected
@@ -587,9 +585,9 @@ rule CN_LRR1:
     # Created corrected file
     awk '{{if($4>=30) print $0}}' {output.out}.corrected >{output.hq}
 
-    median=`cut -f7 {output.hq}| grep -v LRR |sort -n |{params.tool} --stat median --file - `
+    median=`cut -f7 {output.hq}| grep -v LRR |sort -n |{params.tool} --stat median --file - | grep -v WARNING`
     
-    MAD=`cut -f7 {output.hq}|grep -v LRR |{params.tool} --stat MAD --file - `
+    MAD=`cut -f7 {output.hq}|grep -v LRR |{params.tool} --stat MAD --file - | grep -v WARNING`
     min=`echo "${{median}}-(2.5*${{MAD}})"|bc`
     max=`echo "${{median}}+(2.5*${{MAD}})"|bc`
 
@@ -1321,8 +1319,8 @@ rule Actionable_Germline:
     then 
         perl {input.convertor} germline {wildcards.subject}/{wildcards.subject}/db/{wildcards.subject}.somatic {input.germline} {input.annotation} {input.cancerGeneCensus} {input.hotspot} {input.tsid} {input.jsw} {input.clt2} {input.ghr} > {output.germline}
     else
-        touch /spin1/scratch/temp
-        perl {input.convertor} germline /spin1/scratch/temp {input.germline} {input.annotation} {input.cancerGeneCensus} {input.hotspot} {input.tsid} {input.jsw} {input.clt2} {input.ghr} > {output.germline}.gl
+        touch /lscratch/${{SLURM_JOBID}}/temp
+        perl {input.convertor} germline /lscratch/${{SLURM_JOBID}}/temp {input.germline} {input.annotation} {input.cancerGeneCensus} {input.hotspot} {input.tsid} {input.jsw} {input.clt2} {input.ghr} > {output.germline}.gl
         perl {input.convertor} somatic  {input.hotspot} {input.cgc} {input.germline} {input.annotation} >{output.germline}.som
         perl {input.combine} {output.germline}.gl {output.germline}.som  >{output.germline}
         rm -rf {output.germline}.gl {output.germline}.som
@@ -1353,8 +1351,8 @@ rule Actionable_RNAseq:
         batch    = config['job_default']
     shell: """
     #######################
-    touch /spin1/scratch/temp
-    perl {input.convertor} rnaseq /spin1/scratch/temp {input.rnaseq} {input.annotation} {input.cancerGeneCensus} {input.hotspot} {input.tsid} {input.jsw} {input.clt2} {input.ghr} > {output.rnaseq}
+    touch /lscratch/${{SLURM_JOBID}}/temp
+    perl {input.convertor} rnaseq /lscratch/${{SLURM_JOBID}}/temp {input.rnaseq} {input.annotation} {input.cancerGeneCensus} {input.hotspot} {input.tsid} {input.jsw} {input.clt2} {input.ghr} > {output.rnaseq}
     perl {input.convertor} somatic  {input.hotspot} {input.cgc} {input.rnaseq} {input.annotation} >{output.rnaseq}.som
     perl {input.combine} {output.rnaseq}.gl {output.rnaseq}.som  >{output.rnaseq}
     rm -rf {output.rnaseq}.gl {output.rnaseq}.som

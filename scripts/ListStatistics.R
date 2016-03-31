@@ -8,6 +8,7 @@
 #cat file.input| ListStatistics.R -f SD -l /dev/stdin
 
 #library("pracma")
+options(warn=-1)
 suppressPackageStartupMessages(library("pracma"))
 suppressPackageStartupMessages(library("optparse"))
 suppressPackageStartupMessages(library("stats"))

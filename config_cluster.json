@@ -1,5 +1,5 @@
 {
-    "job_default"    : "--partition=ccr     --time=01:00:00",
+    "job_default"    : "--partition=ccr     --time=01:00:00     --gres=lscratch:2",
     "job_addbackann" : "--partition=ccr     --time=00:20:00     --mem=2G   --cpus-per-task=1",
     "job_annovar"    : "--partition=ccr     --time=2-05:00:00   --mem=10G  --cpus-per-task=5",
     "job_bam2mpg"    : "--partition=ccr     --time=24:00:00     --mem=120G --cpus-per-task=32   --gres=lscratch:100",

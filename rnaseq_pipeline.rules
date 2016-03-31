@@ -362,6 +362,8 @@ rule STAR:
 ############
 ############
 #       GATK Best Practices
+# there was an error ##### ERROR MESSAGE: Bad input: while fixing mis-encoded base qualities we encountered a read that was correctly encoded; we cannot handle such a mixture of reads so unfortunately the BAM must be fixed with some other tool
+# so the option of -fixMisencodedQuals is removed from SplitNCigarReads and RealignerTargetCreator
 ############
 rule GATK_RNASeq:
     input:  bam="{base}/{sample}/{sample}.star.dd.bam",
@@ -380,9 +382,9 @@ rule GATK_RNASeq:
     #######################
     MEM=`echo "{params.batch}" |perl -n -e'/--mem=(\d+)/ && print \$1'`
     module load GATK/{version}
-    java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T SplitNCigarReads -R {input.ref} -I {input.bam} -o /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.trim.bam -rf ReassignOneMappingQuality -RMQF 255 -RMQT 60 -U ALLOW_N_CIGAR_READS -fixMisencodedQuals
+    java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T SplitNCigarReads -R {input.ref} -I {input.bam} -o /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.trim.bam -rf ReassignOneMappingQuality -RMQF 255 -RMQT 60 -U ALLOW_N_CIGAR_READS 
     
-    java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T RealignerTargetCreator -R {input.ref} -known {input.phase1} -known {input.mills} -I /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.trim.bam -o /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.realignment.intervals -fixMisencodedQuals
+    java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T RealignerTargetCreator -R {input.ref} -known {input.phase1} -known {input.mills} -I /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.trim.bam -o /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.realignment.intervals
     java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T IndelRealigner -R {input.ref} -known {input.phase1} -known {input.mills} -I /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.trim.bam --targetIntervals /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.realignment.intervals -o /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.lr.bam 
     java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T BaseRecalibrator -R {input.ref} -knownSites {input.phase1} -knownSites {input.mills} -I /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.lr.bam -o /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.recalibration.matrix.txt
     java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T PrintReads -R {input.ref} -I /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.lr.bam -o {output.bam} -BQSR /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.recalibration.matrix.txt
