@@ -3,15 +3,15 @@
 ############
 rule BAM2TDF:
 	input:
-		bam="{base}/{sample}/{sample}.{aligner}.final.bam",
-		bam_bai="{base}/{sample}/{sample}.{aligner}.final.bam.bai"
+		bam="{base}.final.bam",
+		bam_bai="{base}.final.bam.bai"
 	output:
-		"{base}/{sample}/{sample}.{aligner}.final.tdf"
+		"{base}.final.bam.tdf"
 	version: config['igvtools']
 	params:
-		rulename        = "bamtdf",
+		rulename        = "BAM2TDF",
 		ref             = config["reference"],
-		batch           = config[config['host']]['job_igvtools']
+		batch           = config['job_igvtools']
 	shell:  """
 	#######################
 	module load igvtools/{version}

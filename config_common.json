@@ -15,6 +15,7 @@
     "freebayes"     : "0.9.21",
     "fusioncatcher" : "0.99.5a",
     "GATK"          : "3.3-0",
+    "igvtools"      : "2.3.31",
     "MuTect"        : "1.1.7",
     "novocraft"     : "3.04.02",
     "picard"        : "1.119",
