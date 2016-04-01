@@ -5,7 +5,7 @@
 # verstion: 0.01
 # example: $ do_samplesheet2json.R -s samplesheet.txt
 # opt=NULL
-# opt$sampleSheetFile = '/data/CCRBioinfo/zhujack/projects/TargetOsteosarcomaRNA/samplesheet_test.txt'
+# opt$sampleSheetFile = 'samplesheet.txt'
 # opt$outDir = getwd()
 
 suppressPackageStartupMessages(library("optparse"))
@@ -57,12 +57,11 @@ objL <- list(
 
 source("/home/zhujack/bin/R_functions/col2list.R")
 
-
 objList <- list()
 for (L in names(objL) ) {
-    
-    m <- unique(s[, objL[[L]]])
-    m <- m[ !m[,2] == "", ]
+    print(L)
+    m <- unique(s[, c(objL[[L]]) ])
+    # m <- m[ !m[,2] == "", ] ## need empty entries
     if( L == "subject" ) {
         m <- m[ !grepl('RNASeq', m[,2]), ]
     } else if ( L == "RNASeq" ){
