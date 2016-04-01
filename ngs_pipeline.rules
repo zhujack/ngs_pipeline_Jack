@@ -97,7 +97,7 @@ if len(config['sample_references']) > 0:
             TumorCopy = "{subject}/{sample}/copyNumber/{sample}.count.txt".format(subject=SAMPLE_TO_SUBJECT[Tumor], sample=Tumor)
             NormalBam = "{subject}/{sample}/{sample}.bwa.final".format(subject=SAMPLE_TO_SUBJECT[Normal], sample=Normal)
             NormalCopy = "{subject}/{sample}/copyNumber/{sample}.count.txt".format(subject=SAMPLE_TO_SUBJECT[Normal], sample=Normal)
-            pairedCapture[Tumor] = config['target_intervals'][config['sample_captures'][wildcards.sample][0]]
+            pairedCapture[Tumor] = config['target_intervals'][config['sample_captures'][Tumor][0]]
             somaticPairs[Tumor] = [TumorBam + ".bam" , TumorBam + ".bam.bai", NormalBam + ".bam", NormalBam + ".bam.bai"]
             somaticCopy[Tumor] = [NormalCopy, TumorCopy]
 ###########################################################################
@@ -516,7 +516,7 @@ rule CN_LRR:
         filtered="{subject}/{Tumor}/copyNumber/{Tumor}.CN.v1.filtered.txt"    
     params:
         rulename = "CN_LRR",
-        batch    = config["job_default"],
+        batch    = config["job_lrr"],
         tool     = NGS_PIPELINE+ "/scripts/ListStatistics.R"
     shell: """
     #######################
@@ -567,7 +567,7 @@ rule CN_LRR1:
         filtered="{subject}/{Tumor}/copyNumber/{Tumor}.CN.v2.filtered.txt"
     params:
         rulename = "CN_LRR1",
-        batch    = config["job_default"],
+        batch    = config["job_lrr"],
         tool     = NGS_PIPELINE+ "/scripts/ListStatistics.R"
     shell: """
     #######################
@@ -998,7 +998,7 @@ rule Sub_Platypus:
         bams=lambda wildcards: SUB_BAMS[wildcards.subject],
         ref=config["reference"],
         dbsnp=config["dbsnp"],
-        interval= lambda wildcards: config['target_intervals'][config['subject_captures'][wildcards.sample][0]]##changed from sample_captures
+        interval= lambda wildcards: config['target_intervals'][config['subject_captures'][wildcards.subject][0]]##changed from sample_captures
     output:
         vcf="{subject}/{subject}/calls/{subject}.platypus.raw.vcf"
     version: config["platypus"]

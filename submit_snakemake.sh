@@ -1,7 +1,6 @@
 #!/bin/sh
-#SBATCH --job-name="JackTest"
+#SBATCH --job-name="1s"
 #SBATCH --mail-type=FAIL
-#SBATCH --output=log/snakemake.%j.o
 #SBATCH --partition="unlimited"
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=1g
@@ -39,11 +38,17 @@ if [ ! -d log ];then
     mkdir log
 fi
 
+if [ ! -d annovar ]; then 
+	mkdir annovar
+	touch annovar/AnnotationInput.final.txt
+fi
+
 snakemake\
     --directory $WORK_DIR \
     --snakefile $SNAKEFILE \
     --configfile $SAM_CONFIG \
-    --jobname '{params.rulename}.{jobid}' \
+    --jobname '1s{jobid}.{params.rulename}' \
+    --rerun-incomplete \
     --nolock \
     -k -p -T \
     -j 3000 \

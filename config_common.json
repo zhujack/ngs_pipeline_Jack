@@ -36,7 +36,7 @@
     "tophat"        : "2.0.13",
     "vcftools"      : "0.1.12b",
     "annovar_data"      : "/data/Clinomics/Ref/annovar/",
-    "genotypeDest"      : "/data/khanlab/projects/Genotyping/GenotypeFiles/",
+    "genotypeDest"      : "Genotyping/GenotypeFiles/",
     "Actionable_mutation"   : "Actionable.v2.pl",
     "Actionable_fusion"     : "ActionableFusion.pl",
     "Bowtie2Index"          : "/data/Clinomics/Ref/khanlab/Index/Bowtie2Index/genome",
