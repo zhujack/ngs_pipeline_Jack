@@ -30,8 +30,8 @@
     "job_snpeff"     : "--partition=ccr     --time=04:00:00     --mem=10G  --cpus-per-task=32   --gres=lscratch:05",
     "job_STAR"       : "--partition=ccr     --time=05:00:00     --mem=50g  --cpus-per-task=32   --gres=lscratch:600",
     "job_strelka"    : "--partition=ccr     --time=10:00:00     --mem=50G  --cpus-per-task=32   --gres=lscratch:20",
-    "job_tophat"     : "--partition=ccr     --time=2-24:00:00   --mem=65G  --cpus-per-task=32   --gres=lscratch:400     --exclusive",
-    "job_tophat"     : "--partition=ccr     --time=2-24:00:00   --mem=124G  --cpus-per-task=32   --gres=lscratch:400     --exclusive",
+    "job_tophat"     : "--partition=ccr     --time=2-24:00:00   --mem=61G  --cpus-per-task=32   --gres=lscratch:400     --exclusive",
+    "job_tophat"     : "--partition=ccr     --time=2-24:00:00   --mem=124G --cpus-per-task=32   --gres=lscratch:400     --exclusive",
     "job_tophatPost" : "--partition=b1      --time=1-10:00:00   --mem=225g --cpus-per-task=32",
     "job_vcf2txt"    : "--partition=ccr     --time=01:00:00     --mem=5G   --cpus-per-task=2"
 }
