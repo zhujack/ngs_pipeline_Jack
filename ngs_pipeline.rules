@@ -522,7 +522,7 @@ rule CN_LRR:
     #######################
     module load R
     module load bedtools/2.25.0
-
+    mkdir -p {wildcards.subject}/Actionable/
     echo -e "#Chr\\tStart\\tEnd\\tNormalCoverage\\tTumorCoverage\\tRatio\\tLRR\\tGene(s)\\tStrand(s)" >{output.out}    
     paste {input.files} |cut -f 1-4,8 |awk '{{OFS="\\t"}};{{print $1,$2,$3,$4,$5,($5+1)/($4+1),log(($5+1)/($4+1))/log(2)}}' >{output.out}.temp1
     
@@ -546,6 +546,7 @@ rule CN_LRR:
     done |sort |uniq |sortBed -faidx {input.index} -header -i - >>{output.filtered}
     cp -f {output.filtered} {wildcards.subject}{ACT_DIR}/{wildcards.Tumor}.CN.v1.filtered.txt
     rm -rf {output.out}.temp1 {output.out}.temp
+
     #######################
     """
 ############
@@ -572,6 +573,8 @@ rule CN_LRR1:
     #######################
     module load R
     module load bedtools/2.25.0
+    mkdir -p {wildcards.subject}/Actionable/
+    
     echo -e "#Chr\\tStart\\tEnd\\tNormalCoverage\\tTumorCoverage\\tRatio\\tLRR\\tGene(s)\\tStrand(s)" >{output.out}
     paste {input.files} |cut -f 1-4,8 |awk '{{OFS="\\t"}};{{print $1,$2,$3,$4,$5,($5+1)/($4+1),log(($5+1)/($4+1))/log(2)}}' >{output.out}.temp1
     
