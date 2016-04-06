@@ -100,7 +100,7 @@ rule tophat:
     #######################
     module load tophat/{version}
     tophat -p ${{SLURM_CPUS_ON_NODE}} -o /lscratch/${{SLURM_JOBID}} --keep-fasta-order --rg-id {wildcards.sample} --no-coverage-search --rg-sample {wildcards.sample} --rg-library {wildcards.sample} --rg-platform ILLUMINA --fusion-search --fusion-min-dist 100000 --mate-inner-dist 84 --mate-std-dev 74 {params.ref} {input.R1} {input.R2}
-    mv -f /lscratch/${{SLURM_JOBID}}/* {wildcards.base}/{wildcards.sample}/tophat_{wildcards.sample}/
+    cp -rf /lscratch/${{SLURM_JOBID}}/* {wildcards.base}/{wildcards.sample}/tophat_{wildcards.sample}/
     samtools index {wildcards.base}/{wildcards.sample}/tophat_{wildcards.sample}/accepted_hits.bam
     #######################
     """
@@ -119,8 +119,8 @@ rule symlink_tophatBam:
     shell: """
     #######################
     cd {wildcards.base}/{wildcards.sample}/
-    ln -s tophat_{wildcards.sample}/accepted_hits.bam {wildcards.sample}.tophat.final.bam
-    ln -s tophat_{wildcards.sample}/accepted_hits.bam.bai {wildcards.sample}.tophat.final.bam.bai    
+    ln -sf tophat_{wildcards.sample}/accepted_hits.bam {wildcards.sample}.tophat.final.bam
+    ln -sf tophat_{wildcards.sample}/accepted_hits.bam.bai {wildcards.sample}.tophat.final.bam.bai    
     #######################
     """
 ############
@@ -149,14 +149,14 @@ rule tophat_fusion:
     if [ -f ensGene.txt ];then
         rm -f blast ensGene.txt ensGtp.txt mcl refGene.txt
     fi
-    ln -s {params.tp_ref}/* .
+    ln -sf {params.tp_ref}/* .
     tophat-fusion-post -p ${{SLURM_CPUS_ON_NODE}} --num-fusion-pairs 1 {params.ref}
     if [ -f ensGene.txt ];then
         rm blast ensGene.txt ensGtp.txt mcl refGene.txt
     fi
-    sed -i  '1s/^/Sample\\tGene_left\\tChr_left\\tCoordinate_left\\tGene_right\\tChr_right\\tCoordinate_right\\t#SpanningReads\\t#SpanningMatePairs\\t#SpanningMateEndOfPair\\tScore\\n/' tophatfusion_out/result.txt
-    ln -s ../tophatfusion_out/result.html fusion/tophat-fusion.html
-    ln -s ../tophatfusion_out/result.txt  fusion/tophat-fusion.txt
+    sed -i '1s/^/Sample\\tGene_left\\tChr_left\\tCoordinate_left\\tGene_right\\tChr_right\\tCoordinate_right\\t#SpanningReads\\t#SpanningMatePairs\\t#SpanningMateEndOfPair\\tScore\\n/' tophatfusion_out/result.txt
+    ln -sf ../tophatfusion_out/result.html fusion/tophat-fusion.html
+    ln -sf ../tophatfusion_out/result.txt  fusion/tophat-fusion.txt
     #######################
     """
 ############
