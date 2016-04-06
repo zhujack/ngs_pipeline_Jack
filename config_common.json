@@ -11,7 +11,7 @@
     "bowtie"    : "1.1.1",
     "build"     : "hg19",
     "bwa"       : "0.7.10",
-    "cufflinks" : "2.2.1-dev",
+    "cufflinks" : "2.2.1",
     "defuse"    : "0.7.0",
     "fastqc"    : "0.11.2",
     "freebayes" : "0.9.21",
