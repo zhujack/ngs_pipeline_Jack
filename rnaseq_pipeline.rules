@@ -12,7 +12,7 @@ for subject,samples in config['RNASeq'].items():
     for sample in samples:
         SUB2RNA[sample]=subject
 for subject  in config['RNASeq'].keys():
-    DBFiles         +=[subject+"/"+subject+"/db/"+subject+".rnaseq"]
+    DBFiles         +=[subject+"/Subject/db/"+subject+".rnaseq"]
     ActionableFiles +=[subject+ACT_DIR+subject+".fusion.actionable.txt"]
     ActionableFiles +=[subject+ACT_DIR+subject+".rnaseq.actionable.txt"]
     for sample in config['RNASeq'][subject]:

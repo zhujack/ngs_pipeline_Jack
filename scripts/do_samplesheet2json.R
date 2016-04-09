@@ -61,14 +61,14 @@ objList <- list()
 for (L in names(objL) ) {
     print(L)
     m <- unique(s[, c(objL[[L]]) ])
-    # m <- m[ !m[,2] == "", ] ## need empty entries
+    m <- m[ !m[,2] == "", ] ## need empty entries
     if( L == "subject" ) {
         m <- m[ !grepl('RNASeq', m[,2]), ]
     } else if ( L == "RNASeq" ){
           m <- m[ grepl('RNASeq', m[,2]), ]
     } else if ( L == "sample_RNASeq" ){
         m1 <- m[ ! (grepl('RNASeq', m[,1]) | grepl('Normal', m[,1]) ), ]
-        m1[,2] <- sub('\\..*$', '\\.RNASeq', m1[,1], perl=TRUE)
+        m1[,2] <- sub('-.*$', '\\-RNASeq', m1[,1], perl=TRUE)
         m <- m1[ m1[,2] %in% m[,2],]
     } 
     ##some don't convert to list - not working

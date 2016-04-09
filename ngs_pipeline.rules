@@ -73,9 +73,9 @@ for subject  in config['RNASeq'].keys():
         if subject not in PATIENTS:
                 PATIENTS.append(subject)    
 ###########################################################################
-# ALL_FASTQ1  = expand(DATA_DIR + "/{sample}_R1.fastq.gz", sample=config["sample_fastq1"].keys())
-# ALL_FASTQ2  = expand(DATA_DIR + "/{sample}_R2.fastq.gz", sample=config["sample_fastq2"].keys())
-# ALL_FASTQ = ALL_FASTQ1 + ALL_FASTQ2
+ALL_FASTQ1  = expand(DATA_DIR + "/{sample}_R1.fastq.gz", sample=config["sample_fastq1"].keys())
+ALL_FASTQ2  = expand(DATA_DIR + "/{sample}_R2.fastq.gz", sample=config["sample_fastq2"].keys())
+ALL_FASTQ = ALL_FASTQ1 + ALL_FASTQ2
 ALL_FASTQC  = ["{subject}/{sample}/qc/fastqc/{sample}_R2_fastqc.html".format(subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES]
 ALL_BAMS    = ["{subject}/{sample}/{sample}.bwa.final.bam".format(subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES]
 ALL_BAMS   += ["{subject}/{sample}/{sample}.novo.final.bam".format(subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES]
@@ -113,9 +113,9 @@ COPY_NUMBER=[]
 SOMATIC =[]
 for subject in SUBS:
     local  = []
-    local.extend([(subject+"/"+subject+"/calls/"+subject+".hapcaller.snpEff.txt"),
-              (subject+"/"+subject+"/calls/"+subject+".platypus.snpEff.txt"),
-              (subject+"/"+subject+"/calls/"+subject+".bam2mpg.snpEff.txt")])
+    local.extend([(subject+"/Subject/calls/"+subject+".hapcaller.snpEff.txt"),
+              (subject+"/Subject/calls/"+subject+".platypus.snpEff.txt"),
+              (subject+"/Subject/calls/"+subject+".bam2mpg.snpEff.txt")])
     if subject not in SUBJECT_VCFS:
         SUBJECT_VCFS[subject] = local
     germline = [w.replace('snpEff','annotated') for w in local]
@@ -170,7 +170,7 @@ DBFiles =[]
 ActionableFiles =[]
 for subject in SUBJECT_ANNO.keys():
     for group in SUBJECT_ANNO[subject].keys():
-        DBFiles +=[subject+"/"+subject+"/db/"+subject+"."+group] 
+        DBFiles +=[subject+"/Subject/db/"+subject+"."+group] 
         ActionableFiles +=[subject+ACT_DIR+subject+"."+group+".actionable.txt"] 
         for varFile in SUBJECT_ANNO[subject][group]:
             varFiles.append(varFile)
@@ -193,9 +193,14 @@ for subject in SUBJECT_VCFS.keys():
         vcf = vcf.replace('raw.vcf', 'raw.snpEff.vcf')
         ALL_VCFs +=[vcf]
 
+print(ALL_VCFs)
 rule Final:
     input: 
-        # ALL_FASTQ,
+        ALL_FASTQ,
+        SUB_IGV.values(),
+        COPY_NUMBER,
+        ALL_VCFs,
+        ALL_FASTQ,
         SUB_IGV.values(),
         COPY_NUMBER,
         ALL_VCFs,
@@ -230,32 +235,32 @@ rule Final:
     #######################
     """
 
-# ############
-# #    Merge fastq files to sample
-# ############
-# rule fastqMerge:
-#     input:
-#         R1=lambda wildcards: [DATA_DIR_fastq + "/"+fq1 for fq1 in config["sample_fastq1"][wildcards.sample] ],
-#         R2=lambda wildcards: [DATA_DIR_fastq + "/"+fq2 for fq2 in config["sample_fastq2"][wildcards.sample] ]
-#     output:
-#         R1=DATA_DIR + "/{sample}_R1.fastq.gz",
-#         R2=DATA_DIR + "/{sample}_R2.fastq.gz"
-#     params:
-#         rulename  = "fastqMerge",
-#         batch     = config["job_default"]
-#     run:
-#         if isinstance(input.R1, list) and len(input.R1) == 1:
-#             shell("""
-#                 ln -sf  {input.R1} {output.R1};
-#                 ln -sf  {input.R2} {output.R2}
-#             """)
-#         else:
-#             shell("""
-#                 #######################
-#                 cat {input.R1} > {output.R1}
-#                 cat {input.R2} > {output.R2}
-#                 #######################
-#             """)
+############
+#    Merge fastq files to sample
+############
+rule fastqMerge:
+    input:
+        R1=lambda wildcards: [DATA_DIR_fastq + "/"+fq1 for fq1 in config["sample_fastq1"][wildcards.sample] ],
+        R2=lambda wildcards: [DATA_DIR_fastq + "/"+fq2 for fq2 in config["sample_fastq2"][wildcards.sample] ]
+    output:
+        R1=DATA_DIR + "/{sample}_R1.fastq.gz",
+        R2=DATA_DIR + "/{sample}_R2.fastq.gz"
+    params:
+        rulename  = "fastqMerge",
+        batch     = config["job_default"]
+    run:
+        if isinstance(input.R1, list) and len(input.R1) == 1:
+            shell("""
+                ln -sf  {input.R1} {output.R1};
+                ln -sf  {input.R2} {output.R2}
+            """)
+        else:
+            shell("""
+                #######################
+                cat {input.R1} > {output.R1}
+                cat {input.R2} > {output.R2}
+                #######################
+            """)
 
 
 
@@ -873,7 +878,7 @@ rule Sub_MPG:
     input:
         vcf=lambda wildcards: SUB_MPG[wildcards.subject],
     output:
-        vcf="{subject}/{subject}/calls/{subject}.bam2mpg.raw.vcf"
+        vcf="{subject}/Subject/calls/{subject}.bam2mpg.raw.vcf"
     version: config["vcftools"]
     params:
         rulename = "Sub_MPG",
@@ -914,7 +919,7 @@ rule MuTect:
     gawk '{{print $1 "\t" $2-10 "\t" $3+10}}' {input.interval} > /lscratch/${{SLURM_JOBID}}/target_intervals.bed
     module load muTect/{version}
     module load R
-    java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $MUTECTJARPATH -T MuTect \
+    java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $MUTECT_JAR -T MuTect \
         --reference_sequence {input.ref} \
         --cosmic {input.cosmic} \
         --dbsnp {input.dbsnp} \
@@ -973,9 +978,9 @@ rule Sub_HapCall:
         bams=lambda wildcards: SUB_BAMS[wildcards.subject],
         ref=config["reference"],
         dbsnp=config["dbsnp"],
-        interval= lambda wildcards: config['target_intervals'][config['subject_captures'][wildcards.sample][0]]
+        interval= lambda wildcards: config['target_intervals'][config['subject_captures'][wildcards.subject][0]]
     output:
-        vcf="{subject}/{subject}/calls/{subject}.hapcaller.raw.vcf"
+        vcf="{subject}/Subject/calls/{subject}.hapcaller.raw.vcf"
     version: config["GATK"]
     params:
         rulename = "Sub_HapCall",
@@ -1000,7 +1005,7 @@ rule Sub_Platypus:
         dbsnp=config["dbsnp"],
         interval= lambda wildcards: config['target_intervals'][config['subject_captures'][wildcards.subject][0]]##changed from sample_captures
     output:
-        vcf="{subject}/{subject}/calls/{subject}.platypus.raw.vcf"
+        vcf="{subject}/Subject/calls/{subject}.platypus.raw.vcf"
     version: config["platypus"]
     log: "log/platypus.{subject}"
     params:
@@ -1270,7 +1275,7 @@ rule DBinput:
     input:
         txtFiles=lambda wildcards: SUBJECT_ANNO[wildcards.subject][wildcards.group],
         convertor=NGS_PIPELINE + "/scripts/makeDBVariantFile.pl"
-    output: "{subject}/{subject}/db/{subject}.{group}"
+    output: "{subject}/Subject/db/{subject}.{group}"
     params:
         rulename  = "DBinput"
     shell: """
@@ -1283,7 +1288,7 @@ rule DBinput:
 ############
 rule Actionable_Somatic:
     input:
-        somatic="{subject}/{subject}/db/{subject}.somatic",
+        somatic="{subject}/Subject/db/{subject}.somatic",
         convertor=NGS_PIPELINE + "/scripts/" + config["Actionable_mutation"],
         annotation="{subject}/annotation/{subject}.Annotations.coding.rare.txt",
         refFile= config["annovar_data"]+"hg19_SomaticActionableSites.txt",
@@ -1304,7 +1309,7 @@ rule Actionable_Somatic:
 ############
 rule Actionable_Germline:
     input:
-        germline="{subject}/{subject}/db/{subject}.germline",
+        germline="{subject}/Subject/db/{subject}.germline",
         convertor=NGS_PIPELINE + "/scripts/" + config["Actionable_mutation"],
         annotation="{subject}/annotation/{subject}.Annotations.coding.rare.txt",
         annotate  = NGS_PIPELINE + "/scripts/addAnnotations2vcf.pl",
@@ -1340,7 +1345,7 @@ rule Actionable_Germline:
 ############
 rule Actionable_RNAseq:
     input:
-        rnaseq="{subject}/{subject}/db/{subject}.rnaseq",
+        rnaseq="{subject}/Subject/db/{subject}.rnaseq",
         convertor=NGS_PIPELINE + "/scripts/" + config["Actionable_mutation"],
         annotation="{subject}/annotation/{subject}.Annotations.coding.rare.txt",
         annotate  = NGS_PIPELINE + "/scripts/addAnnotations2vcf.pl",
