@@ -30,7 +30,7 @@ print(opt)
 
 df = read.delim(opt$sampleSheetFile, as.is=TRUE, strip.white=TRUE, comment.char = "#")
 ## remove all padded leading spaces when doing matrix conversion
-s = data.frame(lapply(df, as.character))
+s = data.frame(lapply(df, as.character), stringsAsFactors=F)
 
 # colnames(s)
 #  [1] "result_id"    "run_id"       "run_date"     "sample"   "source"
@@ -44,15 +44,15 @@ s = data.frame(lapply(df, as.character))
 # [11] "read1"        "read2"        "note"
 
 objL <- list(
-        'subject' = c('source','sampleName'), 
-        'sample_references' = c('sampleName', 'sampleN'),
-        'sample_fastq1' = c('sampleName', 'read1'),
-        'sample_fastq2' = c('sampleName', 'read2'),
-        'sample_captures' = c('sampleName', 'capture'),
-        'subject_captures' = c('source', 'capture'),
-        'sample_RNASeq' = c('sampleName', 'sampleName'),
-        'RNASeq' = c('source', 'sampleName'),
-        'Diagnosis' = c('sampleName', 'Diagnosis')    
+        'subject' = c('source','SampleName','sample_type'), 
+        'sample_references' = c('SampleName', 'sampleN','sample_type', 'source', 'normal.tumor'),
+        'sample_fastq1' = c('SampleName', 'read1'),
+        'sample_fastq2' = c('SampleName', 'read2'),
+        'sample_captures' = c('SampleName', 'partitioning'),
+        'subject_captures' = c('source', 'partitioning'),
+        'sample_RNASeq' = c('SampleName', 'SampleName','sample_type', 'source', 'normal.tumor'),
+        'RNASeq' = c('source', 'SampleName','sample_type'),
+        'Diagnosis' = c('SampleName', 'Diagnosis')    
 )
 
 source("/home/zhujack/bin/R_functions/col2list.R")
@@ -61,16 +61,40 @@ objList <- list()
 for (L in names(objL) ) {
     print(L)
     m <- unique(s[, c(objL[[L]]) ])
-    m <- m[ !m[,2] == "", ] ## need empty entries
     if( L == "subject" ) {
-        m <- m[ !grepl('RNASeq', m[,2]), ]
+        m <- m[ m$sample_type != 'mRNA', ]
     } else if ( L == "RNASeq" ){
-          m <- m[ grepl('RNASeq', m[,2]), ]
+      m <- m[ m$sample_type == 'mRNA', ]
+    } else if ( L == "sample_references" ){
+        if( all(is.na(m$sampleN)) ) {
+            m1 <- m[ m$normal.tumor == "Tumor" & m$sample_type != "mRNA", ]
+            for ( i in rownames(m1) ) {
+              m_s = m[ m$source == m1[i, 4],]
+              Normal1 = m_s$SampleName[ m_s$normal.tumor != "Tumor" & m_s$sample_type != "mRNA" ]
+              if( length(Normal1) > 0 ) {
+                  m1[i, 2] <- Normal1[1]
+              } else {
+                  m1[i, 2] <- ""
+              }
+            }
+            m = m1
+        }
     } else if ( L == "sample_RNASeq" ){
-        m1 <- m[ ! (grepl('RNASeq', m[,1]) | grepl('Normal', m[,1]) ), ]
-        m1[,2] <- sub('-.*$', '\\-RNASeq', m1[,1], perl=TRUE)
-        m <- m1[ m1[,2] %in% m[,2],]
+        m1 <- m[ m$normal.tumor == "Tumor" & m$sample_type != "mRNA", ]
+        for ( i in rownames(m1) ) {
+            m_s = m[ m$source == m1[i, 4],]
+            RNASeq1 = m_s$SampleName[m_s$sample_type == "mRNA"]
+            if( length(RNASeq1) > 0 ) {
+                m1[i, 2] <- RNASeq1[1]
+            } else {
+                m1[i, 2] <- ""
+            }
+        }
+        m = m1
     } 
+    # m <- m[, 1:2]
+    m <- m[ m[,2] != "", 1:2] ## need empty entries
+
     ##some don't convert to list - not working
     # if( is.element( L, c('Diagnosis', 'sample_captures') ) ) {
     #     objList_1 <- list(t(m))

@@ -193,7 +193,6 @@ for subject in SUBJECT_VCFS.keys():
         vcf = vcf.replace('raw.vcf', 'raw.snpEff.vcf')
         ALL_VCFs +=[vcf]
 
-print(ALL_VCFs)
 rule Final:
     input: 
         ALL_FASTQ,

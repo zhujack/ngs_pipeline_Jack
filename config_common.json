@@ -73,8 +73,13 @@
         "rms_capture"           : "/data/Clinomics/Ref/khanlab/design/RMS_Amplicon.hg19.bed",
         "Agilent.Exon50M"       : "/data/CCRBioinfo/public/serpentine_resources/design/Agilent_SureSelect_Human_All_Exon_50Mb_Kit.design.hg19.merged.bed",
         "Illumina.TruSeqExome"  : "/data/CCRBioinfo/public/serpentine_resources/design/Illumina_TruSeq_Exome_Enrichment_Kit.design.hg19.merged.bed",
-        "OncoVar2"              : ["/data/CCRBioinfo/public/serpentine_resources/design/Agilent_SureSelect_Killian_hit_197_040811.design.hg19.merged.bed"],
-        "OncoVar4"              : ["/data/CCRBioinfo/public/serpentine_resources/design/Agilent_SureSelect_Killian_Version4.design.hg19.merged.bed"],
+        "OncoVar2"              : "/data/CCRBioinfo/public/serpentine_resources/design/Agilent_SureSelect_Killian_hit_197_040811.design.hg19.merged.bed",
+        "OncoVar4"              : "/data/CCRBioinfo/public/serpentine_resources/design/Agilent_SureSelect_Killian_Version4.design.hg19.merged.bed",
+        "Agilent_SureSelect_Killian_hit_197_040811": "/data/CCRBioinfo/public/serpentine_resources/design/Agilent_SureSelect_Killian_hit_197_040811.design.hg19.merged.bed",
+        "Agilent_SureSelect_Killian_Version3": "/data/CCRBioinfo/public/serpentine_resources/design/Agilent_SureSelect_Killian_Version3.design.hg19.merged.gene.bed",
+        "Agilent_SureSelect_Killian_Version4": "/data/CCRBioinfo/public/serpentine_resources/design/Agilent_SureSelect_Killian_Version4.design.hg19.merged.bed",
+        "Agilent_SureSelect_Human_All_Exon_50Mb_Kit": "/data/CCRBioinfo/public/serpentine_resources/design/Agilent_SureSelect_Human_All_Exon_50Mb_Kit.design.hg19.merged.bed",
+        "Illumina_TruSeq_Exome_Enrichment_Kit": "/data/CCRBioinfo/public/serpentine_resources/design/Illumina_TruSeq_Exome_Enrichment_Kit.design.hg19.merged.bed"
     },
     "GTF": {
         "ENS" : "/data/Clinomics/Ref/khanlab/Homo_sapiens.GRCh37.71.gtf",
