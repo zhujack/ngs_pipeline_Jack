@@ -34,6 +34,10 @@ for subject,samples in config['subject'].items():
     for sample in samples:
         SAMPLE_TO_SUBJECT[sample]=subject
 ###########################################################################
+## chromesomes
+chrList = [line.split()[0] for line in open( config['reference'] + '.fai')]
+print(chrList)
+
 ####
 #### Targets
 ####
@@ -175,7 +179,7 @@ for subject in SUBJECT_ANNO.keys():
         for varFile in SUBJECT_ANNO[subject][group]:
             varFiles.append(varFile)
 ###########################################################################
-localrules: Khanlab_Pipeline, RNASeq, IGV_Session, DBinput, AttachAnnotation, Expressed, vcf2txt, symlink_tophatBam, copyNovoBam, Actionable_Germline, Actionable_RNAseq, Actionable_Somatic, Circos, CoveragePlot, BoxPlot_Hotspot
+localrules: Khanlab_Pipeline, RNASeq, IGV_Session, DBinput, AttachAnnotation, Expressed, vcf2txt, symlink_tophatBam, copyNovoBam, Actionable_Germline, Actionable_RNAseq, Actionable_Somatic, Circos, CoveragePlot, BoxPlot_Hotspot, Sub_HapCall_merge
 
 # ruleorder: fastqMerge > fastqc > BWA > Picard_MarkDup
 
@@ -979,7 +983,7 @@ rule Sub_HapCall:
         dbsnp=config["dbsnp"],
         interval= lambda wildcards: config['target_intervals'][config['subject_captures'][wildcards.subject][0]]
     output:
-        vcf="{subject}/Subject/calls/{subject}.hapcaller.raw.vcf"
+        vcf=temp("{subject}/Subject/calls/{subject}.hapcaller.{chr}.raw.vcf")
     version: config["GATK"]
     params:
         rulename = "Sub_HapCall",
@@ -991,9 +995,19 @@ rule Sub_HapCall:
     MEM=`echo "{params.batch}" |perl -n -e'/--mem=(\d+)/ && print \$1'`
     module load GATK/{version}
     gawk '{{print $1 "\t" $2-1 "\t" $3}}' {input.interval} > /lscratch/${{SLURM_JOBID}}/target_intervals.bed
-    java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T HaplotypeCaller -R {input.ref} {bamFiles} -L /lscratch/${{SLURM_JOBID}}/target_intervals.bed -o {output.vcf} --dbsnp {input.dbsnp} -mbq 20 -mmq 30
+    java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T HaplotypeCaller -R {input.ref} {bamFiles} -L /lscratch/${{SLURM_JOBID}}/target_intervals.bed -L {wildcards.chr} -o {output.vcf} --dbsnp {input.dbsnp} -mbq 20 -mmq 30
     #######################
     """)
+
+rule Sub_HapCall_merge:
+    input: ["{subject}/Subject/calls/{subject}.hapcaller." + chr + ".raw.vcf" for chr in chrList]
+    output: "{subject}/Subject/calls/{subject}.hapcaller.raw.vcf"
+    version: config["vcftools"]
+    params:
+        rulename = "Sub_HapCall_merge",
+        batch    = config["job_default"]
+    shell: "module load vcftools/{version}; vcf-concat {input} > {output}"
+    
 ############
 # Subject Platypus
 ############
