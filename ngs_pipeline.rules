@@ -36,7 +36,7 @@ for subject,samples in config['subject'].items():
 ###########################################################################
 ## chromesomes
 chrList = [line.split()[0] for line in open( config['reference'] + '.fai')]
-print(chrList)
+chrList = [chr for chr in chrList if '_' not in chr]
 
 ####
 #### Targets
@@ -987,15 +987,15 @@ rule Sub_HapCall:
     version: config["GATK"]
     params:
         rulename = "Sub_HapCall",
-        batch    = config["job_gatk"]
+        batch    = config["job_hapcaller"]
     run:
         bamFiles = " ".join('-I ' + bam for bam in input.bams)
         shell("""
     #######################
     MEM=`echo "{params.batch}" |perl -n -e'/--mem=(\d+)/ && print \$1'`
     module load GATK/{version}
-    gawk '{{print $1 "\t" $2-1 "\t" $3}}' {input.interval} > /lscratch/${{SLURM_JOBID}}/target_intervals.bed
-    java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T HaplotypeCaller -R {input.ref} {bamFiles} -L /lscratch/${{SLURM_JOBID}}/target_intervals.bed -L {wildcards.chr} -o {output.vcf} --dbsnp {input.dbsnp} -mbq 20 -mmq 30
+    gawk '{{print $1 "\t" $2-1 "\t" $3}}' {input.interval} | grep -w {wildcards.chr} > /lscratch/${{SLURM_JOBID}}/target_intervals.bed
+    java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T HaplotypeCaller -R {input.ref} {bamFiles} -L /lscratch/${{SLURM_JOBID}}/target_intervals.bed -o {output.vcf} --dbsnp {input.dbsnp} -mbq 20 -mmq 30
     #######################
     """)
 

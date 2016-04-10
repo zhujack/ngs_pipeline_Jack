@@ -12,7 +12,7 @@
 #NOW=$(date +"%H%M%S_%m%d%Y")
 NOW=$(date +"%Y%m%d_%H")
 # module use /data/khanlab/apps/Modules
-module load python/3.4.3 R
+module load python/3.4.3
 export NGS_PIPELINE="/data/Clinomics/Tools/ngs-pipeline"
 #export WORK_DIR="/data/Clinomics/Tools/ngs-pipeline/test1"
 export WORK_DIR=`pwd`
@@ -25,6 +25,7 @@ ACT_DIR="/Actionable/"
 cd $WORK_DIR
 ##generate samplesheet.json
 # if [ ! -f $SAM_CONFIG ];then
+#     module load R
 #     $NGS_PIPELINE/scripts/do_samplesheet2json.R -s /data/CCRBioinfo/zhujack/projects/TargetOsteosarcomaRNA/samplesheet_test.txt
 # fi
 
