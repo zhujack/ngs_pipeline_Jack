@@ -35,8 +35,8 @@ for subject,samples in config['subject'].items():
         SAMPLE_TO_SUBJECT[sample]=subject
 ###########################################################################
 ## chromesomes
-chrList = [line.split()[0] for line in open( config['reference'] + '.fai')]
-chrList = [chr for chr in chrList if '_' not in chr]
+CHR = list(range(1,23)) + ["X", "Y"]
+chrList = [ "chr" + str(c) for c in CHR ]
 
 ####
 #### Targets
@@ -1006,7 +1006,10 @@ rule Sub_HapCall_merge:
     params:
         rulename = "Sub_HapCall_merge",
         batch    = config["job_default"]
-    shell: "module load vcftools/{version}; vcf-concat {input} > {output}"
+    shell: """
+    module load vcftools/{version}
+    vcf-concat {input} | vcf-sort > {output}
+"""
     
 ############
 # Subject Platypus
