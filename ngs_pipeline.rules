@@ -265,9 +265,6 @@ rule fastqMerge:
                 #######################
             """)
 
-
-
-
 ############
 #    FASTQC
 ############
@@ -285,8 +282,8 @@ rule fastqc:
     shell: """
     #######################
     module load fastqc/{version}
-    fastqc --extract -t 6 -o {wildcards.subject}/{wildcards.sample}/qc/fastqc/ -d /scratch {input[R1]} 
-    fastqc --extract -t 6 -o {wildcards.subject}/{wildcards.sample}/qc/fastqc/ -d /scratch {input[R2]} 
+    fastqc --extract -t ${{SLURM_CPUS_ON_NODE}} -o {wildcards.subject}/{wildcards.sample}/qc/fastqc/ -d /scratch {input[R1]} 
+    fastqc --extract -t ${{SLURM_CPUS_ON_NODE}} -o {wildcards.subject}/{wildcards.sample}/qc/fastqc/ -d /scratch {input[R2]} 
     #######################
     """
 ############
@@ -301,19 +298,28 @@ rule BWA:
         temp("{subject}/{sample}/{sample}.bwa.bam"),
         temp("{subject}/{sample}/{sample}.bwa.bam.bai")
     version: config["bwa"]
+    log: "{subject}/{sample}/{sample}.mcf.log"
     params:
         rulename  = "BWA",
         platform  = config["platform"],
-        samtools  = config["samtools"], 
+        samtools  = config["samtools"],
+        ea_utils  = config["ea-utils"],
+        adapters  = config["adapters"],
         batch     = config["job_bwa"]
     shell: """
     #######################
     module load bwa/{version}
     module load samtools/{params.samtools}
+    module load ea-utils/{params.ea_utils}
+    
+    R1=/lscratch/${{SLURM_JOBID}}/`basename {input.R1}`
+    R2=/lscratch/${{SLURM_JOBID}}/`basename {input.R2}`
+    fastq-mcf -C 1000000 -q 2 -p 10 -u -x 20 -o $R1 -o $R2 {params.adapters} <(gunzip -c {input.R1}) <(gunzip -c {input.R2}) > {log} 2>&1
+
     bwa mem -M \
-    -t ${{SLURM_CPUS_ON_NODE}}\
+    -t ${{SLURM_CPUS_ON_NODE}} \
     -R '@RG\tID:{wildcards.sample}\tSM:{wildcards.sample}\tLB:{wildcards.sample}\tPL:{params.platform}' \
-    {input.ref} {input.R1} {input.R2} | samtools view -Sbh - \
+    {input.ref} $R1 $R2 | samtools view -Sbh - \
     | samtools sort -m 30000000000 - {wildcards.subject}/{wildcards.sample}/{wildcards.sample}.bwa
     samtools index {wildcards.subject}/{wildcards.sample}/{wildcards.sample}.bwa.bam
     #######################
@@ -331,20 +337,48 @@ rule Novoalign:
         temp("{subject}/{sample}/{sample}.novo.bam.bai")
     version: config["novocraft"]
     resources: novoalign=1
+    log: "{subject}/{sample}/{sample}.novo.log"
     params:
         rulename  = "Novoalign",
         batch     = config["job_novoalign"],
+        ea_utils  = config["ea-utils"],
+        adapters  = config["adapters"],
         samtools  = config["samtools"],
         platform  = config["platform"]
     shell: """
     #######################
     module load samtools/{params.samtools}
     module load novocraft/{version}
-    mpiexec  -envall -host `scontrol show hostname ${{SLURM_NODELIST}} | paste -d',' -s` -np ${{SLURM_NTASKS}} novoalignMPI -F STDFQ -o SAM \"@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:{params.platform}\" -t 250 --hlimit 7 -p 5,2 -l 30 -e 100 -i 200 100 -a AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAG AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA -H -d {input.index} -f {input.R1} {input.R2} | samtools view -uS - | samtools sort -m 30000000000 - {wildcards.subject}/{wildcards.sample}/{wildcards.sample}.novo 
-#    novoalign -c ${{SLURM_CPUS_ON_NODE}} -F STDFQ -o SAM \"@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:{params.platform}\" -t 250 --hlimit 7 -p 5,2 -l 30 -e 100 -i 200 100 -a AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAG AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA -H -d {input.index} -f {input.R1} {input.R2} | samtools view -uS - | samtools sort -m 30000000000 - {wildcards.subject}/{wildcards.sample}/{wildcards.sample}.novo
-    samtools index {wildcards.subject}/{wildcards.sample}/{wildcards.sample}.novo.bam 
+    module load ea-utils/{params.ea_utils}
+
+    R1=/lscratch/${{SLURM_JOBID}}/`basename {input.R1}`
+    R2=/lscratch/${{SLURM_JOBID}}/`basename {input.R2}`
+    fastq-mcf -C 1000000 -q 2 -p 10 -u -x 20 -o $R1 -o $R2 {params.adapters} <(gunzip -c {input.R1}) <(gunzip -c {input.R2}) > {log}.fastq-mcf 2>&1
+    
+    ## novoalignMPI 
+    # mpiexec  -envall -host `scontrol show hostname ${{SLURM_NODELIST}} | paste -d',' -s` -np ${{SLURM_NTASKS}} novoalignMPI -c 15 -a -F STDFQ -o SAM \"@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:{params.platform}\" -d {input.index} -f $R1 $R2 | samtools view -Sbh - | samtools sort -m 30G - /lscratch/${{SLURM_JOBID}}/out > {log} 2>&1
+    
+    ## novoalign multitheading
+    novoalign -c ${{SLURM_CPUS_ON_NODE}} -F STDFQ -a -o Sync -o SAM "@RG\tID:0A4HLD_Normal-Exon50M\tSM:0A4HLD_Normal-Exon50M\tLB:0A4HLD_Normal-Exon50M\tPL:Illumina" -d {input.index} -f $R1 $R2 | samtools view -Sbh - | samtools sort -m 30G - /lscratch/${{SLURM_JOBID}}/out > {log} 2>&1
+
+    samtools index /lscratch/${{SLURM_JOBID}}/out.bam
+    cp -f /lscratch/${{SLURM_JOBID}}/out.bam {wildcards.subject}/{wildcards.sample}/{wildcards.sample}.novo.bam
+    cp -f /lscratch/${{SLURM_JOBID}}/out.bam.bai {wildcards.subject}/{wildcards.sample}/{wildcards.sample}.novo.bam.bai
+    
     #######################
     """
+    
+## novoalignMPI - multithreading no tworking
+# mpiexec  -envall -host `scontrol show hostname ${{SLURM_NODELIST}} | paste -d',' -s` -np ${{SLURM_NTASKS}} novoalignMPI -c 16 -F STDFQ -o SAM \"@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:{params.platform}\" -t 250 --hlimit 7 -p 5,2 -l 30 -e 100 -i 200 100 -a AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAG AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA -H -d {input.index} -f {input.R1} {input.R2} > /lscratch/${{SLURM_JOBID}}/out.sam
+
+## novoalign - multithreading no tworking
+# novoalign -c ${{SLURM_CPUS_ON_NODE}}  -F STDFQ -o SAM \"@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:{params.platform}\" -t 250 --hlimit 7 -p 5,2 -l 30 -e 100 -i 200 100 -a AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAG AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA -H -d {input.index} -f {input.R1} {input.R2} | samtools view -uS - | samtools sort -m 30000000000 - {wildcards.subject}/{wildcards.sample}/{wildcards.sample}.novo
+
+## working example
+# novoalign -F STDFQ -d /data/Clinomics/Ref/khanlab/Index/novoalign/chr_all_hg19.nbx -a -f /data/CCRBioinfo/zhujack/projects/TargetOsteosarcoma/NGS/fastq/0A4HLD_Normal-Exon50M_R1.fastq.gz /data/CCRBioinfo/zhujack/projects/TargetOsteosarcoma/NGS/fastq/0A4HLD_Normal-Exon50M_R2.fastq.gz -o SAM "@RG\tID:0A4HLD_Normal-Exon50M\tSM:0A4HLD_Normal-Exon50M\tLB:0A4HLD_Normal-Exon50M\tPL:Illumina" -a AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAG AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA -o Sync -k -K  /lscratch/${SLURM_JOBID}/out.sam.mismatch -c ${SLURM_CPUS_ON_NODE} | samtools view -uS - | samtools sort -m 30000000000 - 0A4HLD/0A4HLD_Normal-Exon50M/0A4HLD_Normal-Exon50M.novo
+
+
+
 ############
 #       GenotypeFile
 ############
@@ -810,10 +844,10 @@ rule GATK:
     #######################
     MEM=`echo "{params.batch}" |perl -n -e'/--mem=(\d+)/ && print \$1'`
     module load GATK/{version}
-    java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T RealignerTargetCreator -R {input.ref} -known {input.phase1} -known {input.mills} -I {input.bam} -o /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.realignment.intervals 
-    java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T IndelRealigner -R {input.ref} -known {input.phase1} -known {input.mills} -I {input.bam} --targetIntervals /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.realignment.intervals -o /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.lr.bam 
-    java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T BaseRecalibrator -R {input.ref} -knownSites {input.phase1} -knownSites {input.mills} -I /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.lr.bam -o /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.recalibration.matrix.txt
-    java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T PrintReads -R {input.ref} -I /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.lr.bam -o {output.bam} -BQSR /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.recalibration.matrix.txt 
+    java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T RealignerTargetCreator -nt 24 -R {input.ref} -known {input.phase1} -known {input.mills} -I {input.bam} -o /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.realignment.intervals 
+    java -Xmx4g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T IndelRealigner -R {input.ref} -known {input.phase1} -known {input.mills} -I {input.bam} --targetIntervals /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.realignment.intervals -o /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.lr.bam 
+    java -Xmx4g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T BaseRecalibrator -nct 8 -R {input.ref} -knownSites {input.phase1} -knownSites {input.mills} -I /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.lr.bam -o /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.recalibration.matrix.txt
+    java -Xmx4g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T PrintReads -nct 8 -R {input.ref} -I /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.lr.bam -o {output.bam} -BQSR /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.recalibration.matrix.txt 
     mv -f {wildcards.base}/{wildcards.sample}/{wildcards.sample}.bwa.final.bai {output.index}
     ######################
     """
