@@ -254,14 +254,16 @@ rule fastqMerge:
     run:
         if isinstance(input.R1, list) and len(input.R1) == 1:
             shell("""
-                ln -sf  {input.R1} {output.R1};
-                ln -sf  {input.R2} {output.R2}
+                mv {input.R1} {output.R1};
+                mv {input.R2} {output.R2}
+                rm -f {input.R1} {input.R2}
             """)
         else:
             shell("""
                 #######################
                 cat {input.R1} > {output.R1}
                 cat {input.R2} > {output.R2}
+                rm -f {input.R1} {input.R2}
                 #######################
             """)
 
@@ -845,9 +847,9 @@ rule GATK:
     MEM=`echo "{params.batch}" |perl -n -e'/--mem=(\d+)/ && print \$1'`
     module load GATK/{version}
     java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T RealignerTargetCreator -nt 24 -R {input.ref} -known {input.phase1} -known {input.mills} -I {input.bam} -o /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.realignment.intervals 
-    java -Xmx4g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T IndelRealigner -R {input.ref} -known {input.phase1} -known {input.mills} -I {input.bam} --targetIntervals /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.realignment.intervals -o /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.lr.bam 
-    java -Xmx4g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T BaseRecalibrator -nct 8 -R {input.ref} -knownSites {input.phase1} -knownSites {input.mills} -I /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.lr.bam -o /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.recalibration.matrix.txt
-    java -Xmx4g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T PrintReads -nct 8 -R {input.ref} -I /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.lr.bam -o {output.bam} -BQSR /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.recalibration.matrix.txt 
+    java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T IndelRealigner -R {input.ref} -known {input.phase1} -known {input.mills} -I {input.bam} --targetIntervals /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.realignment.intervals -o /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.lr.bam 
+    java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T BaseRecalibrator -nct 8 -R {input.ref} -knownSites {input.phase1} -knownSites {input.mills} -I /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.lr.bam -o /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.recalibration.matrix.txt
+    java -Xmx${{MEM}}g -Djava.io.tmpdir=/lscratch/${{SLURM_JOBID}} -jar $GATK_JAR -T PrintReads -nct 8 -R {input.ref} -I /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.lr.bam -o {output.bam} -BQSR /lscratch/${{SLURM_JOBID}}/{wildcards.sample}.recalibration.matrix.txt 
     mv -f {wildcards.base}/{wildcards.sample}/{wildcards.sample}.bwa.final.bai {output.index}
     ######################
     """
